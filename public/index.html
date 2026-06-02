@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Luminary Awards</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600;700&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<!-- PARTICLE BACKGROUND -->
+<canvas id="particles"></canvas>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" class="hidden">
+  <div class="login-box">
+    <div class="login-emblem">✦</div>
+    <h2>Admin Access</h2>
+    <p>Enter your credentials to manage awards</p>
+    <input type="text" id="login-user" placeholder="Username" autocomplete="off" />
+    <input type="password" id="login-pass" placeholder="Password" />
+    <button id="login-btn">Enter</button>
+    <p id="login-error" class="error hidden">Invalid credentials</p>
+    <button id="login-cancel" class="text-btn">Cancel</button>
+  </div>
+</div>
+
+<!-- PRESENTATION MODE -->
+<div id="presentation-overlay" class="hidden">
+  <canvas id="pres-particles"></canvas>
+  <div id="pres-content">
+    <div id="pres-stage">
+      <div id="pres-category-label"></div>
+      <div id="pres-title">The Nominees Are...</div>
+      <div id="pres-nominees-list"></div>
+      <div id="pres-winner-reveal" class="hidden">
+        <div class="pres-and-the-winner">And the winner is...</div>
+        <div id="pres-winner-name"></div>
+        <div id="pres-winner-detail"></div>
+        <div class="confetti-burst" id="confetti"></div>
+      </div>
+      <div id="pres-controls">
+        <button id="pres-next-btn">Reveal Nominees ›</button>
+      </div>
+    </div>
+  </div>
+  <button id="pres-exit">✕ Exit Presentation</button>
+</div>
+
+<!-- MAIN SITE -->
+<header>
+  <div class="header-inner">
+    <div class="header-top">
+      <div class="site-emblem">✦</div>
+      <div class="header-text">
+        <h1>The Luminary Awards</h1>
+        <p class="tagline">Celebrating Excellence in Music</p>
+      </div>
+      <div class="header-actions">
+        <button id="admin-toggle-btn" class="ghost-btn">Admin</button>
+      </div>
+    </div>
+    <nav id="year-nav"></nav>
+  </div>
+</header>
+
+<main id="main-content">
+  <div id="welcome-screen" class="screen">
+    <div class="welcome-inner">
+      <h2>Welcome to<br/><em>The Luminary Awards</em></h2>
+      <p>Select a year above to view nominations and results, or create a new awards year to begin.</p>
+    </div>
+  </div>
+
+  <!-- YEAR VIEW -->
+  <div id="year-screen" class="screen hidden">
+    <div class="year-header">
+      <h2 id="year-title"></h2>
+      <div id="year-badge"></div>
+      <div id="year-admin-actions" class="hidden">
+        <button id="start-presentation-btn" class="gold-btn hidden">▶ Present Winners</button>
+        <button id="select-winners-btn" class="gold-btn hidden">Select Winners</button>
+        <button id="add-nomination-btn" class="ghost-btn hidden">+ Add Nomination</button>
+      </div>
+    </div>
+
+    <div class="categories-grid" id="categories-grid">
+      <div class="category-card" data-cat="song">
+        <div class="cat-icon">♪</div>
+        <h3>Song of the Year</h3>
+        <div class="nominees-list" id="nominees-song"></div>
+      </div>
+      <div class="category-card" data-cat="album">
+        <div class="cat-icon">◈</div>
+        <h3>Album of the Year</h3>
+        <div class="nominees-list" id="nominees-album"></div>
+      </div>
+      <div class="category-card" data-cat="concert">
+        <div class="cat-icon">◉</div>
+        <h3>Concert of the Year</h3>
+        <div class="nominees-list" id="nominees-concert"></div>
+      </div>
+      <div class="category-card" data-cat="rookie">
+        <div class="cat-icon">✦</div>
+        <h3>Rookie of the Year</h3>
+        <div class="nominees-list" id="nominees-rookie"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ADD NOMINATION MODAL -->
+<div id="nomination-modal" class="modal hidden">
+  <div class="modal-box">
+    <h3>Add Nomination</h3>
+    <div class="modal-field">
+      <label>Category</label>
+      <select id="nom-category">
+        <option value="song">Song of the Year</option>
+        <option value="album">Album of the Year</option>
+        <option value="concert">Concert of the Year</option>
+        <option value="rookie">Rookie of the Year</option>
+      </select>
+    </div>
+    <div id="nom-fields"></div>
+    <div class="modal-actions">
+      <button id="nom-cancel" class="ghost-btn">Cancel</button>
+      <button id="nom-submit" class="gold-btn">Add Nominee</button>
+    </div>
+    <p id="nom-error" class="error hidden"></p>
+  </div>
+</div>
+
+<!-- SELECT WINNERS MODAL -->
+<div id="winners-modal" class="modal hidden">
+  <div class="modal-box wide">
+    <h3>Select Winners</h3>
+    <p class="modal-subtitle">Choose one winner per category. Once saved, nominations will be locked.</p>
+    <div id="winners-form"></div>
+    <div class="modal-actions">
+      <button id="winners-cancel" class="ghost-btn">Cancel</button>
+      <button id="winners-submit" class="gold-btn">Announce Winners & Lock Year</button>
+    </div>
+    <p id="winners-error" class="error hidden"></p>
+  </div>
+</div>
+
+<!-- ADD YEAR MODAL -->
+<div id="year-modal" class="modal hidden">
+  <div class="modal-box small">
+    <h3>New Awards Year</h3>
+    <div class="modal-field">
+      <label>Year</label>
+      <input type="number" id="new-year-input" placeholder="e.g. 2026" min="2000" max="2099" />
+    </div>
+    <div class="modal-actions">
+      <button id="year-cancel" class="ghost-btn">Cancel</button>
+      <button id="year-submit" class="gold-btn">Create Year</button>
+    </div>
+    <p id="year-error" class="error hidden"></p>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
