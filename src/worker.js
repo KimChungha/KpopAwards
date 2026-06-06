@@ -1,6 +1,3 @@
-const ADMIN_USER = env.ADMIN_USER;
-const ADMIN_PASS = env.ADMIN_PASS;
-
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
@@ -14,13 +11,13 @@ function json(data, status = 200) {
   });
 }
 
-function isAuthenticated(request) {
+function isAuthenticated(request, env) {
   const auth = request.headers.get("Authorization") || "";
   if (!auth.startsWith("Bearer ")) return false;
   try {
     const decoded = atob(auth.replace("Bearer ", ""));
     const [user, pass] = decoded.split(":");
-    return user === ADMIN_USER && pass === ADMIN_PASS;
+    return user === env.ADMIN_USER && pass === env.ADMIN_PASS;
   } catch {
     return false;
   }
@@ -35,14 +32,14 @@ async function getYears(db) {
   return results;
 }
 
-async function handleYears(request, db) {
+async function handleYears(request, db, env) {
   if (request.method === "GET") {
     const years = await getYears(db);
     return json(years);
   }
 
   if (request.method === "POST") {
-    if (!isAuthenticated(request)) return json({ error: "Unauthorized" }, 401);
+    if (!isAuthenticated(request, env)) return json({ error: "Unauthorized" }, 401);
     const body = await request.json();
     const year = parseInt(body.year);
     if (!year || year < 2000 || year > 2099)
@@ -55,16 +52,11 @@ async function handleYears(request, db) {
     if (existing) return json({ error: "Year already exists" }, 409);
 
     await db
-      .prepare(
-        "INSERT INTO years (year, status, created_at) VALUES (?, 'open', ?)",
-      )
+      .prepare("INSERT INTO years (year, status, created_at) VALUES (?, 'open', ?)")
       .bind(year, new Date().toISOString())
       .run();
 
-    return json(
-      { year, status: "open", created_at: new Date().toISOString() },
-      201,
-    );
+    return json({ year, status: "open", created_at: new Date().toISOString() }, 201);
   }
 
   return json({ error: "Method not allowed" }, 405);
@@ -72,23 +64,20 @@ async function handleYears(request, db) {
 
 // ── NOMINATIONS ──────────────────────────────────────────────────
 
-async function handleNominations(request, db, url) {
+async function handleNominations(request, db, url, env) {
   const year = parseInt(url.searchParams.get("year"));
 
   if (request.method === "GET") {
     if (!year) return json({ error: "year required" }, 400);
     const { results } = await db
-      .prepare(
-        "SELECT * FROM nominations WHERE year = ? ORDER BY created_at ASC",
-      )
+      .prepare("SELECT * FROM nominations WHERE year = ? ORDER BY created_at ASC")
       .bind(year)
       .all();
-    // Parse data JSON for each nomination
     return json(results.map((n) => ({ ...n, data: JSON.parse(n.data) })));
   }
 
   if (request.method === "POST") {
-    if (!isAuthenticated(request)) return json({ error: "Unauthorized" }, 401);
+    if (!isAuthenticated(request, env)) return json({ error: "Unauthorized" }, 401);
     const body = await request.json();
     const { category, data } = body;
     const yearNum = parseInt(body.year);
@@ -111,20 +100,15 @@ async function handleNominations(request, db, url) {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const createdAt = new Date().toISOString();
     await db
-      .prepare(
-        "INSERT INTO nominations (id, year, category, data, created_at) VALUES (?, ?, ?, ?, ?)",
-      )
+      .prepare("INSERT INTO nominations (id, year, category, data, created_at) VALUES (?, ?, ?, ?, ?)")
       .bind(id, yearNum, category, JSON.stringify(data), createdAt)
       .run();
 
-    return json(
-      { id, year: yearNum, category, data, created_at: createdAt },
-      201,
-    );
+    return json({ id, year: yearNum, category, data, created_at: createdAt }, 201);
   }
 
   if (request.method === "DELETE") {
-    if (!isAuthenticated(request)) return json({ error: "Unauthorized" }, 401);
+    if (!isAuthenticated(request, env)) return json({ error: "Unauthorized" }, 401);
     const id = url.searchParams.get("id");
     if (!id) return json({ error: "id required" }, 400);
     await db.prepare("DELETE FROM nominations WHERE id = ?").bind(id).run();
@@ -136,7 +120,7 @@ async function handleNominations(request, db, url) {
 
 // ── WINNERS ──────────────────────────────────────────────────────
 
-async function handleWinners(request, db, url) {
+async function handleWinners(request, db, url, env) {
   const year = parseInt(url.searchParams.get("year"));
 
   if (request.method === "GET") {
@@ -145,7 +129,6 @@ async function handleWinners(request, db, url) {
       .prepare("SELECT category, nomination_id FROM winners WHERE year = ?")
       .bind(year)
       .all();
-    // Return as { song: id, album: id, ... }
     const winners = {};
     results.forEach((w) => {
       winners[w.category] = w.nomination_id;
@@ -154,7 +137,7 @@ async function handleWinners(request, db, url) {
   }
 
   if (request.method === "POST") {
-    if (!isAuthenticated(request)) return json({ error: "Unauthorized" }, 401);
+    if (!isAuthenticated(request, env)) return json({ error: "Unauthorized" }, 401);
     const body = await request.json();
     const yearNum = parseInt(body.year);
     const winners = body.winners;
@@ -168,21 +151,16 @@ async function handleWinners(request, db, url) {
       .first();
     if (!yearObj) return json({ error: "Year not found" }, 404);
 
-    // Save each winner and lock the year in one batch
     const stmts = [];
     for (const [category, nominationId] of Object.entries(winners)) {
       stmts.push(
         db
-          .prepare(
-            "INSERT OR REPLACE INTO winners (year, category, nomination_id) VALUES (?, ?, ?)",
-          )
-          .bind(yearNum, category, nominationId),
+          .prepare("INSERT OR REPLACE INTO winners (year, category, nomination_id) VALUES (?, ?, ?)")
+          .bind(yearNum, category, nominationId)
       );
     }
     stmts.push(
-      db
-        .prepare("UPDATE years SET status = 'complete' WHERE year = ?")
-        .bind(yearNum),
+      db.prepare("UPDATE years SET status = 'complete' WHERE year = ?").bind(yearNum)
     );
     await db.batch(stmts);
 
@@ -194,7 +172,7 @@ async function handleWinners(request, db, url) {
 
 // ── AUTH ─────────────────────────────────────────────────────────
 
-async function handleAuth(request) {
+async function handleAuth(request, env) {
   if (request.method !== "POST")
     return json({ error: "Method not allowed" }, 405);
   const { username, password } = await request.json();
@@ -215,19 +193,13 @@ export default {
       return new Response(null, { status: 204, headers: CORS });
     }
 
-    // API routes
     if (url.pathname === "/api/auth") return handleAuth(request, env);
-    if (url.pathname === "/api/years") return handleYears(request, env.DB);
-    if (url.pathname === "/api/nominations")
-      return handleNominations(request, env.DB, url);
-    if (url.pathname === "/api/winners")
-      return handleWinners(request, env.DB, url);
+    if (url.pathname === "/api/years") return handleYears(request, env.DB, env);
+    if (url.pathname === "/api/nominations") return handleNominations(request, env.DB, url, env);
+    if (url.pathname === "/api/winners") return handleWinners(request, env.DB, url, env);
 
-    // 404 for unknown API routes
-    if (url.pathname.startsWith("/api/"))
-      return json({ error: "Not found" }, 404);
+    if (url.pathname.startsWith("/api/")) return json({ error: "Not found" }, 404);
 
-    // All other routes serve the static frontend (handled by Cloudflare Assets)
     return env.ASSETS.fetch(request);
   },
 };
