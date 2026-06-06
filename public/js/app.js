@@ -161,16 +161,13 @@ function launchConfetti() {
       shape +
       ";left:" +
       left +
-      "vw;top:-10px;visibility:hidden;opacity:" +
+      "vw;top:-10px;opacity:" +
       opacity +
       ";animation:confetti-fall " +
       duration +
       "s ease-in " +
       delay +
       "s forwards;";
-    el.addEventListener('animationstart', function() {
-      el.style.visibility = 'visible';
-    });
     container.appendChild(el);
   }
 
@@ -179,7 +176,7 @@ function launchConfetti() {
     document.createElement("style");
   style.id = "confetti-style";
   style.textContent =
-    "@keyframes confetti-fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }";
+    "@keyframes confetti-fall { from { transform: translateY(0) rotate(0deg); } to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }";
   document.head.appendChild(style);
 
   setTimeout(function () {
