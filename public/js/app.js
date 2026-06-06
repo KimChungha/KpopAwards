@@ -151,7 +151,7 @@ function launchConfetti() {
     var duration = Math.random() * 3 + 2;
     var delay = Math.random() * 1.5;
     el.style.cssText =
-      "position:absolute;width:" +
+      "position:fixed;width:" +
       size +
       "px;height:" +
       size +
@@ -161,13 +161,16 @@ function launchConfetti() {
       shape +
       ";left:" +
       left +
-      "vw;top:-10px;opacity:" +
+      "vw;top:-10px;visibility:hidden;opacity:" +
       opacity +
       ";animation:confetti-fall " +
       duration +
       "s ease-in " +
       delay +
       "s forwards;";
+    el.addEventListener('animationstart', function() {
+      el.style.visibility = 'visible';
+    });
     container.appendChild(el);
   }
 
