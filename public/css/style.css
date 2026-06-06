@@ -570,16 +570,19 @@ main { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; paddin
   z-index: 500;
   background: #020100;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 #presentation-overlay.hidden { display: none !important; }
 
 #pres-particles {
-  position: absolute;
+  position: fixed;
   inset: 0;
   width: 100%; height: 100%;
   pointer-events: none;
+  z-index: 0;
 }
 
 #pres-content {
@@ -587,7 +590,7 @@ main { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; paddin
   z-index: 1;
   width: 100%;
   max-width: 700px;
-  padding: 2rem;
+  padding: 5rem 2rem 4rem;
   text-align: center;
 }
 

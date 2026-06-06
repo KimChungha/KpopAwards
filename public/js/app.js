@@ -656,6 +656,10 @@ function showPresNominees() {
   document.getElementById('pres-title').textContent = 'And the nominees are...';
   document.getElementById('pres-winner-reveal').classList.add('hidden');
 
+  // Scroll back to top for each new category
+  var overlay = document.getElementById('presentation-overlay');
+  if (overlay) overlay.scrollTo({ top: 0, behavior: 'smooth' });
+
   var list = document.getElementById('pres-nominees-list');
   list.innerHTML = '';
   noms.forEach(function(nom, i) {
@@ -668,6 +672,15 @@ function showPresNominees() {
 
   document.getElementById('pres-next-btn').textContent = 'Reveal Winner >';
   pres.phase = 'nominees';
+
+  // Auto-scroll to the button after nominees have animated in
+  var totalDelay = noms.length * 150 + 600;
+  setTimeout(function() {
+    var btn = document.getElementById('pres-next-btn');
+    if (btn) {
+      btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, totalDelay);
 }
 
 function showPresWinner() {
