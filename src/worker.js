@@ -1,5 +1,5 @@
-const ADMIN_USER = "bubbleboom";
-const ADMIN_PASS = "Chungha10#";
+const ADMIN_USER = env.ADMIN_USER;
+const ADMIN_PASS = env.ADMIN_PASS;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -198,7 +198,7 @@ async function handleAuth(request) {
   if (request.method !== "POST")
     return json({ error: "Method not allowed" }, 405);
   const { username, password } = await request.json();
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
+  if (username === env.ADMIN_USER && password === env.ADMIN_PASS) {
     const token = btoa(`${username}:${password}`);
     return json({ success: true, token });
   }
@@ -216,7 +216,7 @@ export default {
     }
 
     // API routes
-    if (url.pathname === "/api/auth") return handleAuth(request);
+    if (url.pathname === "/api/auth") return handleAuth(request, env);
     if (url.pathname === "/api/years") return handleYears(request, env.DB);
     if (url.pathname === "/api/nominations")
       return handleNominations(request, env.DB, url);
