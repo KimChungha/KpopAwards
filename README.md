@@ -1,117 +1,26 @@
-# 🏆 The Luminary Awards — Cloudflare Setup Guide
+# 🏆 The K-pop Awards
 
-## What you need
-- A free [Cloudflare account](https://dash.cloudflare.com/sign-up)
-- [Node.js](https://nodejs.org) installed
-- A GitHub account
+Last year I wanted to start seriously recording which were my favourite K-pop songs of the year. This started out as a spreadsheet with sheets for song, album, concert, and rookie of the year. Throughout the year I would add candidates to each table. This was a basic and satisfactory method but it wasn't visually pleasing enough for me. This year I have created a web based version of the same concept. This provides a cleaner, more eyecatching way to hold onto the same data.
 
----
+## Basic Criteria
+I have my own basic criteria that I apply for each of the awards. Feel free to use your own though, this is just a guide.
 
-## Step 1 — Push to GitHub
+For all categories, the award year encompasses the full calendar year. No more and no less, from January 1st to December 31st. I dislike when awards are given out prior to the end of the year, leaving releases in the last weeks of the year to be included in the next years awards. I equally dislike when the awards are given out after the start of the next year and they include releases from January in the previous years awards.
 
-Create a new repository on GitHub, then in this folder run:
+### Song of the year
+This project began as a K-pop specific so I have some ridiculously specific criteria.
+* Group or artist must be primarily Korean. (This excludes groups such as Katseye, XG, and Girlset)
+* The song must be a primarily Korean release. (This generally excludes Japanese releases)
+* No other language versions of songs. (Song can be primarily in another language, typically English, but it must not be an English version of a Korean song)
+* No Korean versions or non-Korean releases.
+* Maximum of two songs can be nominated per album. (This is to keep the nominations compact for what is guaranteed to be the longest category)
 
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/music-awards.git
-git push -u origin main
-```
+### Album of the year
+* Must be at least promoted as a mini-album.
+* There is no requirement for a nomination here to have songs in the Song of the year list, but it would be highly unlikely
 
----
+### Concert of the year
+* All K-pop concerts I attend are automatically nominated due to small numbers
 
-## Step 2 — Install Wrangler and log in
-
-```bash
-npm install
-npx wrangler login
-```
-
-This opens a browser window to authenticate with your Cloudflare account.
-
----
-
-## Step 3 — Create the D1 database
-
-```bash
-npx wrangler d1 create music-awards-db
-```
-
-This prints something like:
-
-```
-✅ Successfully created DB 'music-awards-db'
-database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-```
-
-**Copy that `database_id`** and paste it into `wrangler.toml`, replacing `REPLACE_WITH_YOUR_DATABASE_ID`.
-
----
-
-## Step 4 — Run the database schema
-
-```bash
-npx wrangler d1 execute music-awards-db --remote --file=schema.sql
-```
-
-This creates the tables. You only need to do this once.
-
----
-
-## Step 5 — Deploy
-
-```bash
-npx wrangler deploy
-```
-
-Your site is now live at `https://music-awards.YOUR_SUBDOMAIN.workers.dev`
-
----
-
-## Step 6 — Connect GitHub for auto-deploys (optional but recommended)
-
-1. Go to [dash.cloudflare.com](https://dash.cloudflare.com)
-2. Open your Worker → **Settings** → **Builds**
-3. Connect your GitHub repo
-4. From now on, every push to `main` auto-deploys
-
----
-
-## Local development
-
-```bash
-npx wrangler dev
-```
-
-This runs everything locally at `http://localhost:8787` including a local D1 instance — no internet required.
-
----
-
-## Credentials
-
-| Field    | Value   |
-|----------|---------|
-| Username | `admin` |
-| Password | `admin` |
-
-To change them, edit `ADMIN_USER` and `ADMIN_PASS` at the top of `src/worker.js`.
-
----
-
-## Project structure
-
-```
-music-awards-cf/
-├── wrangler.toml          # Cloudflare config (put your DB ID here)
-├── schema.sql             # Run once to create tables
-├── package.json
-├── src/
-│   └── worker.js          # All API logic (Cloudflare Worker)
-└── public/
-    ├── index.html
-    ├── css/style.css
-    └── js/app.js
-```
-"# KpopAwards" 
+### Rookie of the year
+* This should really be renamed to best debut group, as it specifically refers to groups debuting in the current calendar year. Technically a group could debut on December 31st 2026 and would only be qualify in the 2026 calendar year awards despite generally being described as a rookie for their first year after their debut.
