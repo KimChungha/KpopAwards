@@ -1,5 +1,5 @@
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "admin";
+const ADMIN_USER = "bubbleboom";
+const ADMIN_PASS = "Chungha10#";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -29,7 +29,9 @@ function isAuthenticated(request) {
 // ── YEARS ────────────────────────────────────────────────────────
 
 async function getYears(db) {
-  const { results } = await db.prepare("SELECT * FROM years ORDER BY year DESC").all();
+  const { results } = await db
+    .prepare("SELECT * FROM years ORDER BY year DESC")
+    .all();
   return results;
 }
 
@@ -43,16 +45,26 @@ async function handleYears(request, db) {
     if (!isAuthenticated(request)) return json({ error: "Unauthorized" }, 401);
     const body = await request.json();
     const year = parseInt(body.year);
-    if (!year || year < 2000 || year > 2099) return json({ error: "Invalid year" }, 400);
+    if (!year || year < 2000 || year > 2099)
+      return json({ error: "Invalid year" }, 400);
 
-    const existing = await db.prepare("SELECT year FROM years WHERE year = ?").bind(year).first();
+    const existing = await db
+      .prepare("SELECT year FROM years WHERE year = ?")
+      .bind(year)
+      .first();
     if (existing) return json({ error: "Year already exists" }, 409);
 
-    await db.prepare("INSERT INTO years (year, status, created_at) VALUES (?, 'open', ?)")
+    await db
+      .prepare(
+        "INSERT INTO years (year, status, created_at) VALUES (?, 'open', ?)",
+      )
       .bind(year, new Date().toISOString())
       .run();
 
-    return json({ year, status: "open", created_at: new Date().toISOString() }, 201);
+    return json(
+      { year, status: "open", created_at: new Date().toISOString() },
+      201,
+    );
   }
 
   return json({ error: "Method not allowed" }, 405);
@@ -65,10 +77,14 @@ async function handleNominations(request, db, url) {
 
   if (request.method === "GET") {
     if (!year) return json({ error: "year required" }, 400);
-    const { results } = await db.prepare("SELECT * FROM nominations WHERE year = ? ORDER BY created_at ASC")
-      .bind(year).all();
+    const { results } = await db
+      .prepare(
+        "SELECT * FROM nominations WHERE year = ? ORDER BY created_at ASC",
+      )
+      .bind(year)
+      .all();
     // Parse data JSON for each nomination
-    return json(results.map(n => ({ ...n, data: JSON.parse(n.data) })));
+    return json(results.map((n) => ({ ...n, data: JSON.parse(n.data) })));
   }
 
   if (request.method === "POST") {
@@ -77,22 +93,34 @@ async function handleNominations(request, db, url) {
     const { category, data } = body;
     const yearNum = parseInt(body.year);
 
-    if (!yearNum || !category || !data) return json({ error: "year, category and data required" }, 400);
+    if (!yearNum || !category || !data)
+      return json({ error: "year, category and data required" }, 400);
 
     const validCategories = ["song", "album", "concert", "rookie"];
-    if (!validCategories.includes(category)) return json({ error: "Invalid category" }, 400);
+    if (!validCategories.includes(category))
+      return json({ error: "Invalid category" }, 400);
 
-    const yearObj = await db.prepare("SELECT * FROM years WHERE year = ?").bind(yearNum).first();
+    const yearObj = await db
+      .prepare("SELECT * FROM years WHERE year = ?")
+      .bind(yearNum)
+      .first();
     if (!yearObj) return json({ error: "Year not found" }, 404);
-    if (yearObj.status !== "open") return json({ error: "This year is locked" }, 403);
+    if (yearObj.status !== "open")
+      return json({ error: "This year is locked" }, 403);
 
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const createdAt = new Date().toISOString();
-    await db.prepare("INSERT INTO nominations (id, year, category, data, created_at) VALUES (?, ?, ?, ?, ?)")
+    await db
+      .prepare(
+        "INSERT INTO nominations (id, year, category, data, created_at) VALUES (?, ?, ?, ?, ?)",
+      )
       .bind(id, yearNum, category, JSON.stringify(data), createdAt)
       .run();
 
-    return json({ id, year: yearNum, category, data, created_at: createdAt }, 201);
+    return json(
+      { id, year: yearNum, category, data, created_at: createdAt },
+      201,
+    );
   }
 
   if (request.method === "DELETE") {
@@ -113,11 +141,15 @@ async function handleWinners(request, db, url) {
 
   if (request.method === "GET") {
     if (!year) return json({ error: "year required" }, 400);
-    const { results } = await db.prepare("SELECT category, nomination_id FROM winners WHERE year = ?")
-      .bind(year).all();
+    const { results } = await db
+      .prepare("SELECT category, nomination_id FROM winners WHERE year = ?")
+      .bind(year)
+      .all();
     // Return as { song: id, album: id, ... }
     const winners = {};
-    results.forEach(w => { winners[w.category] = w.nomination_id; });
+    results.forEach((w) => {
+      winners[w.category] = w.nomination_id;
+    });
     return json(winners);
   }
 
@@ -127,21 +159,30 @@ async function handleWinners(request, db, url) {
     const yearNum = parseInt(body.year);
     const winners = body.winners;
 
-    if (!yearNum || !winners) return json({ error: "year and winners required" }, 400);
+    if (!yearNum || !winners)
+      return json({ error: "year and winners required" }, 400);
 
-    const yearObj = await db.prepare("SELECT * FROM years WHERE year = ?").bind(yearNum).first();
+    const yearObj = await db
+      .prepare("SELECT * FROM years WHERE year = ?")
+      .bind(yearNum)
+      .first();
     if (!yearObj) return json({ error: "Year not found" }, 404);
 
     // Save each winner and lock the year in one batch
     const stmts = [];
     for (const [category, nominationId] of Object.entries(winners)) {
       stmts.push(
-        db.prepare("INSERT OR REPLACE INTO winners (year, category, nomination_id) VALUES (?, ?, ?)")
-          .bind(yearNum, category, nominationId)
+        db
+          .prepare(
+            "INSERT OR REPLACE INTO winners (year, category, nomination_id) VALUES (?, ?, ?)",
+          )
+          .bind(yearNum, category, nominationId),
       );
     }
     stmts.push(
-      db.prepare("UPDATE years SET status = 'complete' WHERE year = ?").bind(yearNum)
+      db
+        .prepare("UPDATE years SET status = 'complete' WHERE year = ?")
+        .bind(yearNum),
     );
     await db.batch(stmts);
 
@@ -154,7 +195,8 @@ async function handleWinners(request, db, url) {
 // ── AUTH ─────────────────────────────────────────────────────────
 
 async function handleAuth(request) {
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (request.method !== "POST")
+    return json({ error: "Method not allowed" }, 405);
   const { username, password } = await request.json();
   if (username === ADMIN_USER && password === ADMIN_PASS) {
     const token = btoa(`${username}:${password}`);
@@ -176,11 +218,14 @@ export default {
     // API routes
     if (url.pathname === "/api/auth") return handleAuth(request);
     if (url.pathname === "/api/years") return handleYears(request, env.DB);
-    if (url.pathname === "/api/nominations") return handleNominations(request, env.DB, url);
-    if (url.pathname === "/api/winners") return handleWinners(request, env.DB, url);
+    if (url.pathname === "/api/nominations")
+      return handleNominations(request, env.DB, url);
+    if (url.pathname === "/api/winners")
+      return handleWinners(request, env.DB, url);
 
     // 404 for unknown API routes
-    if (url.pathname.startsWith("/api/")) return json({ error: "Not found" }, 404);
+    if (url.pathname.startsWith("/api/"))
+      return json({ error: "Not found" }, 404);
 
     // All other routes serve the static frontend (handled by Cloudflare Assets)
     return env.ASSETS.fetch(request);
